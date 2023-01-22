@@ -17,11 +17,13 @@
 
 mod blackhole;
 mod domain;
+mod fastanswer;
 mod geoip;
 mod ipcidr;
 
 pub use self::domain::Domain;
 pub use blackhole::blackhole;
+pub use fastanswer::fast_answer;
 pub use geoip::GeoIp;
 pub use ipcidr::IpCidr;
 
