@@ -16,7 +16,7 @@
 use super::types::*;
 use crate::{
     errors::ScriptError,
-    utils::{blackhole, fast_answer, Domain, GeoIp, IpCidr},
+    utils::{blackhole, fast_answer, fast_answer_ip, Domain, GeoIp, IpCidr},
 };
 use once_cell::sync::Lazy;
 use rune::Module;
@@ -61,6 +61,13 @@ pub static UTILS_MODULE: Lazy<Module> = Lazy::new(|| {
             &["fast_answer"],
             |msg: &Message, a: i64, b: i64, c: i64, d: i64| -> Result<Message, ScriptError> {
                 Ok(fast_answer(&msg.into(), a as u8, b as u8, c as u8, d as u8)?.into())
+            },
+        )
+        .unwrap();
+        m.function(
+            &["fast_answer_ip"],
+            |msg: &Message, ip: IpAddr| -> Result<Message, ScriptError> {
+                Ok(fast_answer_ip(&msg.into(), ip.into())?.into())
             },
         )
         .unwrap();

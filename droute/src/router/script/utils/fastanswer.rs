@@ -16,9 +16,8 @@
 use super::Result;
 use bytes::{Bytes, BytesMut};
 use domain::{
-    base::{Dname, Message, MessageBuilder},
-    rdata::A,
-    base::iana::Class
+    base::{iana::Class, net::IpAddr, Message, MessageBuilder},
+    rdata::{Aaaa, A},
 };
 
 /// Create a message that stops the requestor to send the query again.
@@ -28,11 +27,35 @@ pub fn fast_answer(query: &Message<Bytes>, a: u8, b: u8, c: u8, d: u8) -> Result
         .start_answer(query, domain::base::iana::Rcode::NoError)?;
 
     builder.push((
-        Dname::root_ref(),
+        query.first_question().unwrap().qname(),
         Class::In,
         86400,
         A::from_octets(a, b, c, d),
     ))?;
+
+    Ok(builder.into_message())
+}
+
+/// fast_answer_ip
+pub fn fast_answer_ip(query: &Message<Bytes>, ip: IpAddr) -> Result<Message<Bytes>> {
+    // Is 50 a good number?
+    let mut builder = MessageBuilder::from_target(BytesMut::with_capacity(50))?
+        .start_answer(query, domain::base::iana::Rcode::NoError)?;
+
+    match ip {
+        IpAddr::V4(v4) => builder.push((
+            query.first_question().unwrap().qname(),
+            Class::In,
+            86400,
+            A::new(v4),
+        ))?,
+        IpAddr::V6(v6) => builder.push((
+            query.first_question().unwrap().qname(),
+            Class::In,
+            86400,
+            Aaaa::new(v6),
+        ))?,
+    };
 
     Ok(builder.into_message())
 }
