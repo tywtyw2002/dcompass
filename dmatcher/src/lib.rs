@@ -18,3 +18,4 @@
 //! This is a library providing a set of domain and IP address matching algorithms.
 
 pub mod domain;
+pub mod hosts;

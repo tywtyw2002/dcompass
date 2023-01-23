@@ -20,12 +20,14 @@ mod domain;
 mod fastanswer;
 mod geoip;
 mod ipcidr;
+mod hosts;
 
 pub use self::domain::Domain;
 pub use blackhole::blackhole;
 pub use fastanswer::{fast_answer, fast_answer_ip};
 pub use geoip::GeoIp;
 pub use ipcidr::IpCidr;
+pub use hosts::Hosts;
 
 use ::domain::base::{name::FromStrError, octets::ParseError};
 use maxminddb::MaxMindDBError;

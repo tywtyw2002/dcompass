@@ -16,7 +16,7 @@
 use super::types::*;
 use crate::{
     errors::ScriptError,
-    utils::{blackhole, fast_answer, fast_answer_ip, Domain, GeoIp, IpCidr},
+    utils::{blackhole, fast_answer, fast_answer_ip, Domain, GeoIp, IpCidr, Hosts},
 };
 use once_cell::sync::Lazy;
 use rune::Module;
@@ -30,10 +30,15 @@ pub enum Utils {
     GeoIp(#[rune(get)] SealedGeoIp),
     #[rune(constructor)]
     IpCidr(#[rune(get)] SealedIpCidr),
+    #[rune(constructor)]
+    Hosts(#[rune(get)] SealedHosts),
 }
 
 #[derive(rune::Any, Clone)]
 pub struct SealedDomain(Arc<Domain>);
+
+#[derive(rune::Any, Clone)]
+pub struct SealedHosts(Arc<Hosts>);
 
 #[derive(rune::Any, Clone)]
 pub struct SealedGeoIp(Arc<GeoIp>);
@@ -103,6 +108,45 @@ pub static UTILS_MODULE: Lazy<Module> = Lazy::new(|| {
 
         m.inst_fn("contains", |domain: &SealedDomain, qname: &Dname| -> bool {
             domain.0.contains(&qname.into())
+        })
+        .unwrap();
+    }
+
+    // Hosts list
+    {
+        m.ty::<Hosts>().unwrap();
+        m.ty::<SealedHosts>().unwrap();
+
+        m.function(&["Hosts", "new"], Hosts::new).unwrap();
+        m.inst_fn(
+            "add_host",
+            |mut hosts: Hosts, host: &str, ip: &str, is_server: bool| -> Result<Hosts, ScriptError> {
+                hosts.add_host(host, ip, is_server)?;
+                Ok(hosts)
+            },
+        )
+        .unwrap();
+
+        m.inst_fn(
+            "add_file",
+            |mut hosts: Hosts, path: &str| -> Result<Hosts, ScriptError> {
+                hosts.add_file(path)?;
+                Ok(hosts)
+            },
+        )
+        .unwrap();
+
+        m.inst_fn("seal", |hosts: Hosts| -> SealedHosts {
+            SealedHosts(Arc::new(hosts))
+        })
+        .unwrap();
+
+        m.inst_fn("reslove", |hosts: &SealedHosts, qname: &Dname| -> Option<IpAddr> {
+            let ip = hosts.0.reslove(&qname.into());
+            match ip {
+                None => None,
+                Some(v) => Some(v.into()),
+            }
         })
         .unwrap();
     }
